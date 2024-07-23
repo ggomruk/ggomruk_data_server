@@ -1,26 +1,16 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { MarketService } from './market.service';
+import { MarketDataService } from './market.service';
 import { HttpService } from '@nestjs/axios';
 import { MarketConfig } from 'src/config/config.interface';
-import { catchError, firstValueFrom, last, Observable } from 'rxjs';
-import { AxiosError, AxiosResponse } from 'axios';
-
-interface IklineData {
-  openTime: number;
-  open: string;
-  high: string;
-  low: string;
-  close: string;
-  volume: string;
-  closeTime: number;
-}
+import { firstValueFrom } from 'rxjs';
+import { IklineData } from './interface/Ikline';
 
 @Injectable()
 export class ApiService implements OnModuleInit {
   private readonly logger = new Logger(ApiService.name);
   constructor(
     private readonly config: MarketConfig,
-    private marketService: MarketService,
+    private marketDataService: MarketDataService,
     private readonly httpService: HttpService,
   ) {}
 
@@ -29,48 +19,83 @@ export class ApiService implements OnModuleInit {
   }
 
   async initializeData() {
-    const data = await this.getKlineData();
-  }
-
-  async getKlineData(): Promise<IklineData[]> {
     const symbol = 'BTCUSDT';
     const interval = '1m';
     const endTime = new Date().getTime();
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-    const startTime = threeMonthsAgo.getTime();
-    const limit = 4000000;
+    const startTime = new Date(new Date().getFullYear(), 0, 1).getTime();
 
-    console.log(startTime);
-    console.log(endTime)
+    const dataCount = await this.marketDataService.getKlineDataCount(
+      startTime,
+      endTime,
+    );
 
-    const url = `/api/v3/klines?symbol=${symbol}&interval=${interval}&startTime=${startTime}&endTime=${endTime}&limit=${limit}`;
-    try {
-      const response = await firstValueFrom(
-        this.httpService.get<IklineData[]>(url),
+    const expectedDataAmount = (endTime - startTime) / (1000 * 60);
+    const tolerancePercentage = 1;
+    const toleranceAmount = expectedDataAmount * (tolerancePercentage / 100);
+    const lowerBound = expectedDataAmount - toleranceAmount;
+
+    if (dataCount < lowerBound) {
+      const data = await this.getKlineData(
+        symbol,
+        interval,
+        startTime,
+        endTime,
       );
-      if (!response.data || response.data.length === 0) {
-        throw new Error('No data found');
-      }
-      const data = response.data.map((item) => ({
-        openTime: item[0],
-        open: item[1],
-        high: item[2],
-        low: item[3],
-        close: item[4],
-        volume: item[5],
-        closeTime: item[6],
-      }));
-      console.log(data.length)
-      let firstData = data[0];
-      let lastData = data[data.length - 1];
-      console.log(new Date(firstData.openTime).toISOString());
-      console.log(new Date(lastData.closeTime).toISOString());
-      console.log(lastData.closeTime - firstData.openTime);
-      return response.data;
-    } catch (error) {
-      this.logger.error(error);
-      return [];
+      await this.marketDataService.insertBulkData(data);
     }
+  }
+
+  async getKlineData(
+    symbol: string,
+    interval: string,
+    startTime: number,
+    endTime: number,
+  ): Promise<IklineData[]> {
+    let finalData = [];
+
+    while (true) {
+      try {
+        const url = `/api/v3/klines?symbol=${symbol}&interval=${interval}&startTime=${startTime}&endTime=${endTime}&limit=1000`;
+        const response = await firstValueFrom(
+          this.httpService.get<IklineData[]>(url),
+        );
+
+        if (response.status === 429 || response.status === 418) {
+          // Rate limit exceeded
+          const weightsUsed = response.headers['x-mbx-used-weight'];
+          console.log(weightsUsed);
+        } else {
+          const data = response.data.map((item) => ({
+            symbol: symbol,
+            openTime: item[0],
+            closeTime: item[6],
+            open: item[1],
+            high: item[2],
+            low: item[3],
+            close: item[4],
+            volume: item[5],
+          }));
+          finalData = [...finalData, ...data];
+
+          // get the timestamp of the lasta data returned from server
+          const lastDataCloseTime = data[data.length - 1]['closeTime'];
+          // update time to fetch next batch
+          if (lastDataCloseTime < endTime) {
+            console.log(
+              'Getting Next Batch Starting From => ',
+              new Date(lastDataCloseTime),
+            );
+            startTime = lastDataCloseTime;
+          } else {
+            console.log(`Finished fetching data (count: ${finalData.length})`);
+            break;
+          }
+        }
+      } catch (error) {
+        this.logger.error(error);
+        return [];
+      }
+    }
+    return finalData;
   }
 }
