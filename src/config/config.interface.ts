@@ -8,7 +8,8 @@ export interface databaseConfig {
 
 export interface MarketConfig {
   name: string;
-  url: string;
+  wsUrl: string;
+  baseUrl: string;
   apiKey: string;
   secretKey: string;
 }

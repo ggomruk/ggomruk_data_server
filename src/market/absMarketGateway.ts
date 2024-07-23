@@ -12,7 +12,7 @@ export abstract class AbsMarketGateway {
   }
 
   connect() {
-    this.ws = new WebSocket(this.config.url);
+    this.ws = new WebSocket(this.config.wsUrl);
 
     this.ws.on('open', () => this.onOpen());
     this.ws.on('message', (data: string) => this.onMessage(data));

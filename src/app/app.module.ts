@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import config from '../config/config'
+import config from '../config/config';
 import { MarketModule } from 'src/market/market.module';
 
 @Module({
@@ -10,17 +10,18 @@ import { MarketModule } from 'src/market/market.module';
       envFilePath: '.env',
       cache: true,
       isGlobal: true,
-      load: [config]
+      load: [config],
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const dbConfig = configService.get<string>('database');
-        const uri = `mongodb://${dbConfig["host"]}:${dbConfig["port"]}/${dbConfig["name"]}`
-        return { uri }
+        const uri = `mongodb://${dbConfig['host']}:${dbConfig['port']}/${dbConfig['name']}`;
+        return { uri };
       },
     }),
-    MarketModule],
+    MarketModule,
+  ],
 })
 export class AppModule {}
