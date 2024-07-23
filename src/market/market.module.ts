@@ -4,7 +4,7 @@ import { MarketSchema } from './market.schema';
 import { BinanceWebsocketService } from './binance.service';
 import { MarketConfig, MarketConfiglist } from 'src/config/config.interface';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MarketService } from './market.service';
+import { MarketDataService } from './market.service';
 import { HttpModule, HttpService } from '@nestjs/axios';
 import { ApiService } from './api.service';
 
@@ -16,31 +16,31 @@ const getConfig = (exchangeName: string, configService: ConfigService) => {
 };
 
 const serviceProviders = [
-  MarketService,
+  MarketDataService,
   {
     provide: ApiService,
     useFactory: (
       configService: ConfigService,
-      marketService: MarketService,
+      marketService: MarketDataService,
       httpService: HttpService,
     ) => {
       const binanceConfig = getConfig('binance', configService);
       if (!binanceConfig) throw new Error('Unable to find binance config');
       return new ApiService(binanceConfig, marketService, httpService);
     },
-    inject: [ConfigService, MarketService, HttpService],
+    inject: [ConfigService, MarketDataService, HttpService],
   },
   {
     provide: BinanceWebsocketService,
     useFactory: (
       configService: ConfigService,
-      marketService: MarketService,
+      marketService: MarketDataService,
     ) => {
       const binanceConfig = getConfig('binance', configService);
       if (!binanceConfig) throw new Error('Unable to find binance config');
       return new BinanceWebsocketService(binanceConfig, marketService);
     },
-    inject: [ConfigService, MarketService],
+    inject: [ConfigService, MarketDataService],
   },
 ];
 

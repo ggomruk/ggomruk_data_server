@@ -1,7 +1,8 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { AbsMarketGateway } from './absMarketGateway';
 import { MarketConfig } from 'src/config/config.interface';
-import { MarketService } from './market.service';
+import { MarketDataService } from './market.service';
+import { IklineData } from './interface/Ikline';
 
 @Injectable()
 export class BinanceWebsocketService
@@ -14,7 +15,7 @@ export class BinanceWebsocketService
 
   constructor(
     config: MarketConfig,
-    private marketService: MarketService,
+    private marketService: MarketDataService,
   ) {
     super(config);
     this.logger.log('BinanceWebsocketService Initialized');
@@ -53,9 +54,10 @@ export class BinanceWebsocketService
         ) {
           this.logger.log('Subscribed to Binance Websocket');
         } else {
-          const marketData = {
-            date: jsonData.k.t,
+          const marketData: IklineData = {
             symbol: jsonData.s,
+            openTime: jsonData.k.t,
+            closeTime: jsonData.k.T,
             open: jsonData.k.o,
             high: jsonData.k.h,
             low: jsonData.k.l,
@@ -69,7 +71,7 @@ export class BinanceWebsocketService
           ) {
             // first time or
             this.marketService
-              .saveMarketData(marketData)
+              .insertData(marketData)
               .then(() => {
                 this.logger.log(`Saved kline data for => ${jsonData.k.t}`);
                 this.lastKlineTime = jsonData.k.t;
