@@ -5,8 +5,8 @@ import { IMarket } from './market.schema';
 import { IklineData } from './interface/Ikline';
 
 @Injectable()
-export class MarketDataService {
-  private readonly logger = new Logger(MarketDataService.name);
+export class MarketDataRepository {
+  private readonly logger = new Logger(MarketDataRepository.name);
   constructor(
     @InjectModel('Market') private readonly marketModel: Model<IMarket>,
   ) {}
@@ -43,17 +43,27 @@ export class MarketDataService {
 
     try {
       await this.marketModel.bulkWrite(operations);
-      this.logger.debug('Data inserted/updated successfully');
+      this.logger.debug(
+        `Data inserted/updated successfully (${data[0].symbol})`,
+      );
     } catch (error) {
-      this.logger.error('Error inserting/updating data', error);
+      this.logger.error(
+        `Error inserting/updating data (${data[0].symbol}) => `,
+        error,
+      );
     }
   }
 
-  async getKlineDataCount(startDate: number, endDate: number): Promise<number> {
+  async getKlineDataCount(
+    symbol: string,
+    startDate: number,
+    endDate: number,
+  ): Promise<number> {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
     const dataCount = await this.marketModel.countDocuments({
+      symbol: { $eq: symbol },
       openTime: { $gte: start },
       closeTime: { $lte: end },
     });
