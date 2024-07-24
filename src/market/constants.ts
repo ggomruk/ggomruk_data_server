@@ -1,0 +1,12 @@
+export const SYMBOL_LIST = [
+  'BTCUSDT',
+  'ETHUSDT',
+  'BNBUSDT',
+  'ADAUSDT',
+  'SOLUSDT',
+  'AVAXUSDT',
+  'DOGEUSDT',
+  'XRPUSDT',
+  'SHIBUSDT',
+  'LINKUSDT',
+];
