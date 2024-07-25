@@ -13,7 +13,6 @@ import { MarketModule } from 'src/market/market.module';
       load: [config],
     }),
     MongooseModule.forRootAsync({
-      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const dbConfig = configService.get<string>('database');
