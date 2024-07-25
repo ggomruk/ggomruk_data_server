@@ -9,7 +9,7 @@ export default () => ({
   exchanges: [
     {
       name: 'binance',
-      wsUrl: 'wss://stream.binance.com:9443/ws/btcusdt',
+      wsUrl: 'wss://stream.binance.com:9443/ws',
       baseUrl: 'https://api.binance.com',
       apiKey: process.env.BINANCE_API_KEY,
       secretKey: process.env.BINANCE_SECRET_KEY,
