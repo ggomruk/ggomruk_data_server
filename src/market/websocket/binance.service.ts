@@ -3,6 +3,7 @@ import { AbsMarketGateway } from './absMarketGateway';
 import { MarketConfig } from 'src/config/config.interface';
 import { MarketDataRepository } from '../market.service';
 import { IklineData } from '../interface/Ikline';
+import { SYMBOL_LIST } from '../constants';
 
 @Injectable()
 export class BinanceWebsocketService
@@ -11,7 +12,8 @@ export class BinanceWebsocketService
 {
   protected readonly logger = new Logger(BinanceWebsocketService.name);
   subscriptionNumber: number;
-  lastKlineTime: number | null = null;
+  lastKlineTime: { [key: string]: number | null } = {};
+  symbols: string[];
 
   constructor(
     config: MarketConfig,
@@ -19,6 +21,10 @@ export class BinanceWebsocketService
   ) {
     super(config);
     this.logger.log('BinanceWebsocketService Initialized');
+    this.symbols = SYMBOL_LIST.map((symbol) => {
+      this.lastKlineTime[symbol] = null;
+      return `${symbol.toLowerCase()}@kline_1m`;
+    });
   }
   onModuleInit() {
     this.connect();
@@ -29,7 +35,7 @@ export class BinanceWebsocketService
     this.subscriptionNumber = 1;
     const subscribeMessage = JSON.stringify({
       method: 'SUBSCRIBE',
-      params: ['btcusdt@kline_1m'],
+      params: this.symbols,
       id: this.subscriptionNumber,
     });
     this.ws.send(subscribeMessage);
@@ -37,7 +43,7 @@ export class BinanceWebsocketService
   protected unsubscribe(): void {
     const subscribeMessage = JSON.stringify({
       method: 'UNSUBSCRIBE',
-      params: ['btcusdt@kline_1m'],
+      params: this.symbols,
       id: 1,
     });
     this.ws.send(subscribeMessage);
@@ -48,39 +54,38 @@ export class BinanceWebsocketService
       const messageString = data.toString('utf8');
       try {
         const jsonData = JSON.parse(messageString);
-        if (
-          jsonData.result === null &&
-          jsonData.id === this.subscriptionNumber
-        ) {
-          this.logger.log('Subscribed to Binance Websocket');
-        } else {
-          const marketData: IklineData = {
-            symbol: jsonData.s,
-            openTime: jsonData.k.t,
-            closeTime: jsonData.k.T,
-            open: jsonData.k.o,
-            high: jsonData.k.h,
-            low: jsonData.k.l,
-            close: jsonData.k.c,
-            volume: jsonData.k.v,
-          };
-
-          if (
-            this.lastKlineTime !== jsonData.k.t ||
-            this.lastKlineTime == null
-          ) {
-            // first time or
-            this.marketService
-              .insertData(marketData)
-              .then(() => {
-                this.logger.log(`Saved kline data for => ${jsonData.k.t}`);
-                this.lastKlineTime = jsonData.k.t;
-              })
-              .catch((error) => {
-                this.logger.error('Failed to save market data =>  ', error);
-              });
+        if (jsonData.result !== null) {
+          if(jsonData.id === this.subscriptionNumber) {
+            this.logger.log('Subscribed to Binance Websocket');
+          } else if (jsonData.e === "kline") {
+            const marketData: IklineData = {
+              symbol: jsonData.s,
+              openTime: jsonData.k.t,
+              closeTime: jsonData.k.T,
+              open: jsonData.k.o,
+              high: jsonData.k.h,
+              low: jsonData.k.l,
+              close: jsonData.k.c,
+              volume: jsonData.k.v,
+            };
+  
+            if (this.lastKlineTime[jsonData.s] !== jsonData.k.t || this.lastKlineTime == null) {
+              this.marketService
+                .insertData(marketData)
+                .then(() => {
+                  this.logger.log(`Saved kline data for ${jsonData.s} (${new Date (jsonData.k.t).toISOString()})`);
+                  this.lastKlineTime[jsonData.s] = jsonData.k.t;
+                })
+                .catch((error) => {
+                  this.logger.error('Failed to save market data =>  ', error);
+                  // TODO ERROR HANDLING
+                });
+            } else {
+              this.lastKlineTime[jsonData.s] = jsonData.k.t;
+            }
           } else {
-            this.lastKlineTime = jsonData.k.t;
+            this.logger.warn('Unhandled message type');
+            this.logger.debug(jsonData);
           }
         }
       } catch (error) {
@@ -88,8 +93,8 @@ export class BinanceWebsocketService
       }
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected handleError(error: Error): void {
-    console.log('handle error');
+    // connection, transmission, or protocol error
+    this.logger.error(`Error in Binance Websocket => ${error.message}`);
   }
 }
