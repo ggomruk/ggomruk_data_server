@@ -47,7 +47,7 @@ export class ApiService implements OnModuleInit {
           await this.marketDataService.insertBulkData(data);
         } else {
           this.logger.log(
-            'Enough data in database. Skipping data fetch for ' + symbol,
+            'Sufficient amount of data in database. Skipping data fetch for ' + symbol,
           );
         }
       } catch (error) {

@@ -3,7 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MarketSchema } from './market.schema';
 import { BinanceWebsocketService } from './websocket/binance.service';
 import { MarketConfig, MarketConfiglist } from 'src/config/config.interface';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { MarketDataRepository } from './market.service';
 import { HttpModule } from '@nestjs/axios';
 import { ApiService } from './api/api.service';
@@ -36,7 +36,6 @@ const serviceProviders = [
   imports: [
     MongooseModule.forFeature([{ name: 'Market', schema: MarketSchema }]),
     HttpModule.registerAsync({
-      imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const binanceConfig = getConfig('binance', configService);
         if (!binanceConfig) throw new Error('Unable to find binance config');
