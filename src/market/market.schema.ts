@@ -13,7 +13,7 @@ export interface IMarket extends Document {
 }
 
 @Schema({ timestamps: false })
-export class Market extends Document {
+export class Market extends Document implements IMarket {
   @Prop({ required: true, type: Date })
   openTime: Date;
 
