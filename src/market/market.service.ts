@@ -14,10 +14,21 @@ export class MarketDataRepository {
   async insertData(data: IklineData): Promise<IMarket> {
     const query = {
       symbol: data.symbol,
-      openTime: data.openTime,
-      closeTime: data.closeTime,
+      openTime: new Date(data.openTime),
+      closeTime: new Date(data.closeTime),
     };
-    const update = { $set: data };
+    const update = {
+      $set: {
+        symbol: data.symbol,
+        openTime: new Date(data.openTime),
+        closeTime: new Date(data.closeTime),
+        open: parseFloat(data.open),
+        high: parseFloat(data.high),
+        low: parseFloat(data.low),
+        close: parseFloat(data.close),
+        volume: parseFloat(data.volume),
+      },
+    };
     const options = { upsert: true, new: true };
 
     const result = await this.marketModel.findOneAndUpdate(
@@ -33,10 +44,21 @@ export class MarketDataRepository {
       updateOne: {
         filter: {
           symbol: item.symbol,
-          openTime: item.openTime,
-          closeTime: item.closeTime,
+          openTime: new Date(item.openTime),
+          closeTime: new Date(item.closeTime),
         },
-        update: { $set: item },
+        update: {
+          $set: {
+            symbol: item.symbol,
+            openTime: new Date(item.openTime),
+            closeTime: new Date(item.closeTime),
+            open: parseFloat(item.open),
+            high: parseFloat(item.high),
+            low: parseFloat(item.low),
+            close: parseFloat(item.close),
+            volume: parseFloat(item.volume),
+          },
+        },
         upsert: true,
       },
     }));

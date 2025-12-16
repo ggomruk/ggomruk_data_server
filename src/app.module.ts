@@ -15,8 +15,14 @@ import { MarketModule } from 'src/market/market.module';
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const dbConfig = configService.get<string>('database');
-        const uri = `mongodb://${dbConfig['host']}:${dbConfig['port']}/${dbConfig['name']}`;
+        const dbConfig = configService.get('database');
+        // Check if credentials are provided
+        const hasCredentials = dbConfig.username && dbConfig.password;
+        const uri = hasCredentials
+          ? `mongodb://${dbConfig.username}:${dbConfig.password}@${dbConfig.host}:${dbConfig.port}/${dbConfig.name}?authSource=admin`
+          : `mongodb://${dbConfig.host}:${dbConfig.port}/${dbConfig.name}`;
+        
+        console.log('MongoDB URI:', uri.replace(/:([^:@]+)@/, ':****@')); // Log with masked password
         return { uri };
       },
     }),
