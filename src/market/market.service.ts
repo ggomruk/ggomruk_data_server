@@ -92,4 +92,11 @@ export class MarketDataRepository {
 
     return dataCount;
   }
+
+  async getLastKline(symbol: string): Promise<IMarket | null> {
+    return this.marketModel
+      .findOne({ symbol })
+      .sort({ openTime: -1 })
+      .exec();
+  }
 }

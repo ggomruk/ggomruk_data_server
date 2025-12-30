@@ -20,37 +20,42 @@ export class ApiService implements OnModuleInit {
 
   async initializeData() {
     const interval = '1m';
-    const endTime = new Date().getTime();
-    const startTime = new Date(new Date().getFullYear(), 0, 1).getTime();
-
-    const expectedDataAmount = (endTime - startTime) / (1000 * 60);
-    const tolerancePercentage = 1;
-    const toleranceAmount = expectedDataAmount * (tolerancePercentage / 100);
-    const lowerBound = expectedDataAmount - toleranceAmount;
+    const now = new Date().getTime();
+    const defaultStart = new Date(new Date().getFullYear(), 0, 1).getTime();
 
     for (let i = 0; i < SYMBOL_LIST.length; i++) {
       const symbol = SYMBOL_LIST[i];
-      this.logger.debug(`Checking data for ${symbol}`);
+      this.logger.debug(`Checking data gap for ${symbol}`);
+      
       try {
-        const dataCount = await this.marketDataService.getKlineDataCount(
-          symbol,
-          startTime,
-          endTime,
-        );
-        if (dataCount < lowerBound) {
+        const lastKline = await this.marketDataService.getLastKline(symbol);
+        let startTime = defaultStart;
+
+        if (lastKline) {
+          // Start from the end of the last candle
+          startTime = new Date(lastKline.closeTime).getTime() + 1;
+        }
+
+        // If gap is larger than 1 minute (60000ms)
+        if (now - startTime > 60000) {
+          this.logger.log(`Gap detected for ${symbol}. Fetching from ${new Date(startTime).toISOString()} to ${new Date(now).toISOString()}`);
+          
           const data = await this.getKlineData(
             symbol,
             interval,
             startTime,
-            endTime,
+            now,
           );
-          await this.marketDataService.insertBulkData(data);
+          
+          if (data.length > 0) {
+            await this.marketDataService.insertBulkData(data);
+            this.logger.log(`Filled gap for ${symbol} with ${data.length} records`);
+          }
         } else {
-          this.logger.log(
-            'Sufficient amount of data in database. Skipping data fetch for ' + symbol,
-          );
+          this.logger.log(`Data is up to date for ${symbol}`);
         }
       } catch (error) {
+        this.logger.error(`Failed to initialize data for ${symbol}: ${error.message}`);
         continue;
       }
     }

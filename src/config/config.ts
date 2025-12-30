@@ -3,7 +3,7 @@ export default () => ({
     host: process.env.DB_HOST ?? 'localhost',
     username: process.env.DB_USERNAME ?? '',
     password: process.env.DB_PASSWORD ?? '',
-    port: parseInt(process.env.DB_PORT, 10) ?? 27018,
+    port: parseInt(process.env.DB_PORT, 10) ?? 27017,
     name: process.env.DB_NAME ?? 'ggomruk',
   },
   exchanges: [
