@@ -4,6 +4,7 @@ import { WebSocket } from 'ws';
 
 export abstract class AbsMarketGateway {
   protected readonly logger = new Logger(AbsMarketGateway.name);
+  /* eslint-disable no-undef */
   protected pingInterval: NodeJS.Timeout;
   protected ws: WebSocket;
   private reconnectAttempts = 0;
