@@ -21,7 +21,7 @@ export class ApiService implements OnModuleInit {
   async initializeData() {
     const interval = '1m';
     const now = new Date().getTime();
-    const defaultStart = new Date(new Date().getFullYear(), 0, 1).getTime();
+    const defaultStart = new Date(2025, 0, 1).getTime();
 
     for (let i = 0; i < SYMBOL_LIST.length; i++) {
       const symbol = SYMBOL_LIST[i];
