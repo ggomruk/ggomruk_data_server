@@ -4,7 +4,7 @@ export default () => ({
     username: process.env.DB_USERNAME ?? '',
     password: process.env.DB_PASSWORD ?? '',
     port: parseInt(process.env.DB_PORT, 10) ?? 27017,
-    name: process.env.DB_NAME ?? 'stratyx',
+    name: process.env.DB_NAME ?? 'stratyix',
   },
   exchanges: [
     {
