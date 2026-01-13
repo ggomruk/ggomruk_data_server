@@ -1,5 +1,5 @@
-# Use Node.js LTS
-FROM node:18-alpine
+# Multi-stage build for production optimization
+FROM node:18-alpine AS builder
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -8,17 +8,43 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm ci --only=production && npm cache clean --force
 
 # Copy source code
 COPY . .
 
-# Build if necessary (NestJS usually needs a build step)
+# Build the application
 RUN npm run build
 
-# Expose port (Assuming 4000 or different from main API to avoid conflict if on host, but in docker it's isolated)
-# Let's assume standard NestJS port 3000 but mapped differently, or configurable via env.
+# Production stage
+FROM node:18-alpine
+
+# Install wget for healthcheck
+RUN apk add --no-cache wget
+
+# Set working directory
+WORKDIR /usr/src/app
+
+# Copy package files and install production dependencies only
+COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built application from builder
+COPY --from=builder /usr/src/app/dist ./dist
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /usr/src/app
+
+USER nodejs
+
+# Expose port
 EXPOSE 3000
 
-# Start command
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+
+# Start the application
 CMD ["node", "dist/main"]
