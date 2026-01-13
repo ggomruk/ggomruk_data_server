@@ -19,7 +19,7 @@ import { MarketModule } from 'src/market/market.module';
         const dbConfig = configService.get('db');
         const env = appConfig.env;
 
-        if (env === 'production') {
+        if (env === 'prod') {
           const uri = dbConfig.uri;
           console.log('MongoDB URI:', uri.replace(/:([^:@]+)@/, ':****@'));
           return { uri };
@@ -27,8 +27,8 @@ import { MarketModule } from 'src/market/market.module';
           // Check if credentials are provided
           const hasCredentials = dbConfig.username && dbConfig.password;
           const uri = hasCredentials
-            ? `mongodb://${dbConfig.username}:${dbConfig.password}@${dbConfig.host}:${dbConfig.port}/${dbConfig.name}?authSource=admin`
-            : `mongodb://${dbConfig.host}:${dbConfig.port}/${dbConfig.name}`;
+            ? `mongodb://${dbConfig.username}:${dbConfig.password}@${dbConfig.host}:${dbConfig.port}/${dbConfig.dbName}?authSource=admin`
+            : `mongodb://${dbConfig.host}:${dbConfig.port}/${dbConfig.dbName}`;
           
           console.log('MongoDB URI:', uri.replace(/:([^:@]+)@/, ':****@')); // Log with masked password
           return { uri };

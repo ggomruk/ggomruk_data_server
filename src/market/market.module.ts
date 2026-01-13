@@ -9,10 +9,11 @@ import { ApiService } from './api/api.service';
 import { IExchangeConfig, ExchangeConfigList } from 'src/config/exchangeConfig';
 
 const getConfig = (exchangeName: string, configService: ConfigService) => {
-  const exchangeConfig: IExchangeConfig = configService
-    .get<ExchangeConfigList>('exchanges')
-    .find((exchange: IExchangeConfig) => exchange.name === exchangeName);
-  return exchangeConfig;
+  const exchangeConfig: IExchangeConfig = configService.get<IExchangeConfig>('exchange');
+  if (exchangeConfig?.name === exchangeName) {
+    return exchangeConfig;
+  }
+  return undefined;
 };
 
 const serviceProviders = [
