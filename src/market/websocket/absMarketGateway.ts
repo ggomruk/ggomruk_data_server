@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { MarketConfig } from 'src/config/config.interface';
+import { IExchangeConfig } from 'src/config/exchangeConfig';
 import { WebSocket } from 'ws';
 
 export abstract class AbsMarketGateway {
@@ -12,7 +12,7 @@ export abstract class AbsMarketGateway {
   private readonly reconnectDelay = 1000;
   private maxReconnectionDelay = this.reconnectDelay * 60;
 
-  constructor(protected readonly config: MarketConfig) {
+  constructor(protected readonly config: IExchangeConfig) {
     this.config = config;
   }
 

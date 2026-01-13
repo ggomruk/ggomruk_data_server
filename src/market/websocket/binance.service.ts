@@ -1,9 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { AbsMarketGateway } from './absMarketGateway';
-import { MarketConfig } from 'src/config/config.interface';
 import { MarketDataRepository } from '../market.service';
 import { IklineData } from '../interface/Ikline';
 import { SYMBOL_LIST } from '../constants';
+import { IExchangeConfig } from 'src/config/exchangeConfig';
 
 @Injectable()
 export class BinanceWebsocketService
@@ -16,7 +16,7 @@ export class BinanceWebsocketService
   symbols: string[];
 
   constructor(
-    config: MarketConfig,
+    config: IExchangeConfig,
     private marketService: MarketDataRepository,
   ) {
     super(config);
