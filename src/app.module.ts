@@ -1,8 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import configuration from './config';
 import { MarketModule } from 'src/market/market.module';
+import { HealthController } from './health.controller';
+
+const logger = new Logger('AppModule');
 
 @Module({
   imports: [
@@ -21,7 +24,7 @@ import { MarketModule } from 'src/market/market.module';
 
         if (env === 'prod') {
           const uri = dbConfig.uri;
-          console.log('MongoDB URI:', uri.replace(/:([^:@]+)@/, ':****@'));
+          logger.log('MongoDB URI: ' + uri.replace(/:([^:@]+)@/, ':****@'));
           return { uri };
         } else {
           // Check if credentials are provided
@@ -30,12 +33,13 @@ import { MarketModule } from 'src/market/market.module';
             ? `mongodb://${dbConfig.username}:${dbConfig.password}@${dbConfig.host}:${dbConfig.port}/${dbConfig.dbName}?authSource=admin`
             : `mongodb://${dbConfig.host}:${dbConfig.port}/${dbConfig.dbName}`;
           
-          console.log('MongoDB URI:', uri.replace(/:([^:@]+)@/, ':****@')); // Log with masked password
+          logger.log('MongoDB URI: ' + uri.replace(/:([^:@]+)@/, ':****@'));
           return { uri };
         }
       },
     }),
     MarketModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}
