@@ -1,8 +1,10 @@
 import { Module, Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ScheduleModule } from '@nestjs/schedule';
 import configuration from './config';
 import { MarketModule } from 'src/market/market.module';
+import { OnchainModule } from './onchain/onchain.module';
 import { HealthController } from './health.controller';
 
 const logger = new Logger('AppModule');
@@ -38,7 +40,9 @@ const logger = new Logger('AppModule');
         }
       },
     }),
+    ScheduleModule.forRoot(),
     MarketModule,
+    OnchainModule,
   ],
   controllers: [HealthController],
 })
